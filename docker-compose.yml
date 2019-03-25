@@ -1,0 +1,40 @@
+version: '3'
+
+services:
+  db:
+    image: mysql:5.7
+    container_name: mautic_mysql_db
+    volumes: #Ideally i suggest to use volume mounting for mysql so you don't loose data when container restarts
+      - /path/on/host/directory:/var/lib/mysql #Change the /path/on/host/directory to the path on your filesystem
+    networks:
+      - default
+      - webproxy
+    environment:
+      - MYSQL_ROOT_PASSWORD=<root-password-for-mysql>
+      - MYSQL_USER=<username-for-mautic-database>
+      - MYSQL_PASSWORD=<password-for-mautic-database>
+      - MYSQL_DATABASE=<db-name-for-mautic-database>
+
+  mautic:
+    image: mautic/mautic
+    container_name: mautic
+    ports:
+      - 8080:80
+    networks:
+      - default
+      - webproxy
+    depends_on:
+      - db
+    environment:
+      - MAUTIC_DB_HOST=db:3306
+      - MAUTIC_DB_USER=<username-for-mautic-database>
+      - MAUTIC_DB_PASSWORD=<password-for-mautic-database>
+      - MAUTIC_DB_NAME=<db-name-for-mautic-database>
+      - MAUTIC_DB_TABLE_PREFIX=mc_
+      - VIRTUAL_HOST=<domain-name-to-access-mautic> #example: some-meaningful-domain.com
+      - LETSENCRYPT_HOST=<domain-name-to-obtain-ssl-certificate> #ideally it will be similar to virtual host some-meaningful-domain.com
+      - LETSENCRYPT_EMAIL=<emailid@domain.com> #email which you want to register with letsencrypt for your domain ssl
+
+networks:
+  webproxy:
+    external: true
